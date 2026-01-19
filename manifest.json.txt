@@ -1,0 +1,12 @@
+json
+{
+  "name": "LyricPlayer",
+  "short_name": "Lyrics",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1db954",
+  "icons": [
+    { "src": "https://cdn-icons-png.flaticon.com", "sizes": "512x512", "type": "image/png" }
+  ]
+}

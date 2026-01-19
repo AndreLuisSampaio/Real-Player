@@ -1,0 +1,94 @@
+html
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LyricPlayer 2026</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
+        #lyrics-container { height: 200px; overflow-y: auto; margin-top: 20px; font-size: 1.2rem; line-height: 2; border-top: 1px solid #333; padding-top: 20px; }
+        .highlight { color: #1db954; font-weight: bold; font-size: 1.5rem; transition: 0.3s; }
+        .controls { margin-top: 20px; background: #282828; padding: 20px; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
+        input[type="file"] { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>LyricPlayer MP3 + LRC</h2>
+    
+    <div class="controls">
+        <label>Carregar MP3:</label><br>
+        <input type="file" id="audioFile" accept="audio/mp3"><br>
+        <label>Carregar Letra (.lrc):</label><br>
+        <input type="file" id="lrcFile" accept=".lrc">
+        
+        <br><br>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+
+    <div id="lyrics-container">Escolha os arquivos para começar...</div>
+
+    <script>
+        const audio = document.getElementById('audioPlayer');
+        const lrcInput = document.getElementById('lrcFile');
+        const audioInput = document.getElementById('audioFile');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        let lyrics = [];
+
+        // Carregar Audio
+        audioInput.onchange = (e) => {
+            const file = e.target.files[0];
+            audio.src = URL.createObjectURL(file);
+        };
+
+        // Carregar e Processar LRC
+        lrcInput.onchange = (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                parseLRC(event.target.result);
+            };
+            reader.readAsText(file);
+        };
+
+        function parseLRC(text) {
+            lyrics = [];
+            const lines = text.split('\n');
+            const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+            
+            lines.forEach(line => {
+                const match = timeReg.exec(line);
+                if (match) {
+                    const seconds = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / 100;
+                    const content = line.replace(timeReg, '').trim();
+                    lyrics.push({ time: seconds, content });
+                }
+            });
+            renderLyrics();
+        }
+
+        function renderLyrics() {
+            lyricsContainer.innerHTML = lyrics.map((l, i) => `<p id="line-${i}">${l.content}</p>`).join('');
+        }
+
+        // Sincronização
+        audio.ontimeupdate = () => {
+            const currentTime = audio.currentTime;
+            for (let i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time && (!lyrics[i+1] || currentTime < lyrics[i+1].time)) {
+                    document.querySelectorAll('#lyrics-container p').forEach(p => p.className = '');
+                    const activeLine = document.getElementById(`line-${i}`);
+                    if (activeLine) {
+                        activeLine.className = 'highlight';
+                        activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    break;
+                }
+            }
+        };
+    </script>
+</body>
+</html>
